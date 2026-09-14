@@ -49,16 +49,16 @@ jobs:
         run: |
           echo "android.useAndroidX=true" >> gradle.properties
           echo "android.nonTransitiveRClass=true" >> gradle.properties
-          touch app/proguard-rules.pro
           gradle assembleRelease -Pandroid.useAndroidX=true
           
-      - name: Upload APK with Direct MIME Type (Fixes .zip bug)
+      - name: Upload APK with Direct MIME Type
         run: |
           APK_PATH="app/build/outputs/apk/release/app-release.apk"
+          FINAL_APK_NAME="${APP_NAME:-App}.apk"
           
-          # Force Android package MIME type and explicit filename
-          APK_LINK=$(curl -sSf -H "Content-Type: application/vnd.android.package-archive" -H "X-Filename: NanoDraw.apk" --upload-file "$APK_PATH" "https://transfer.sh/NanoDraw.apk" || curl -sSf -F "file=@$APK_PATH;filename=NanoDraw.apk" https://temp.sh/upload)
+          # Force Android package MIME type and explicit dynamic filename
+          APK_LINK=$(curl -sSf -H "Content-Type: application/vnd.android.package-archive" -H "X-Filename: $FINAL_APK_NAME" --upload-file "$APK_PATH" "https://transfer.sh/$FINAL_APK_NAME" || curl -sSf -F "file=@$APK_PATH;filename=$FINAL_APK_NAME" https://temp.sh/upload)
           
-          echo "### 🎨 NanoDraw Build Finished!" >> $GITHUB_STEP_SUMMARY
+          echo "### 🎨 ${{ env.APP_NAME }} Build Finished!" >> $GITHUB_STEP_SUMMARY
           echo "📱 **Download APK:** [Direct Download Link]($APK_LINK)" >> $GITHUB_STEP_SUMMARY
           printf "\nDirect APK URL: %s\n" "$APK_LINK" >> $GITHUB_STEP_SUMMARY
