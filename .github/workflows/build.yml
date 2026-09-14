@@ -19,9 +19,24 @@ jobs:
       - run: python injector.py ${{ github.event.inputs.gist_id }}
       - uses: actions/setup-java@v4
         with: { java-version: '21', distribution: 'temurin', cache: 'gradle' }
-      - env:
+
+      - name: Decode Keystore Safely with Python
+        env:
           KEYSTORE_BASE64: ${{ secrets.KEYSTORE_BASE64 }}
-        run: echo $KEYSTORE_BASE64 | base64 --decode > app/release-key.jks
+        run: |
+          python3 -c "
+          import os, base64
+          raw = os.environ.get('KEYSTORE_BASE64', '').strip().replace('\n', '').replace('\r', '').replace(' ', '')
+          if not raw:
+              raise ValueError('KEYSTORE_BASE64 secret is EMPTY! Please check GitHub Secrets.')
+          missing_padding = len(raw) % 4
+          if missing_padding:
+              raw += '=' * (4 - missing_padding)
+          with open('app/release-key.jks', 'wb') as f:
+              f.write(base64.b64decode(raw))
+          print('✅ Keystore decoded successfully! Size:', os.path.getsize('app/release-key.jks'), 'bytes')
+          "
+
       - env:
           KEYSTORE_PASSWORD: ${{ secrets.KEYSTORE_PASSWORD }}
           KEY_ALIAS: ${{ secrets.KEY_ALIAS }}
@@ -30,7 +45,7 @@ jobs:
           chmod +x gradlew
           ./gradlew assembleRelease bundleRelease
           
-      - name: Upload APK to Temp Host (Bypass GitHub Limits)
+      - name: Upload APK to Temp Host
         run: |
           APK_LINK=$(curl -s -H "Max-Days: 1" --upload-file app/build/outputs/apk/release/app-release.apk https://transfer.sh/app-release.apk)
           echo "### 🚀 Build Complete!" >> $GITHUB_STEP_SUMMARY
