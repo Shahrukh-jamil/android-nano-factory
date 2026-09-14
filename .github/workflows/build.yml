@@ -1,4 +1,4 @@
-name: Build Play Store Android App
+name: Build Android APK Fast
 
 on:
   workflow_dispatch:
@@ -33,16 +33,15 @@ jobs:
           import os, base64
           raw = os.environ.get('KEYSTORE_BASE64', '').strip().replace('\n', '').replace('\r', '').replace(' ', '')
           if not raw:
-              raise ValueError('KEYSTORE_BASE64 secret is EMPTY! Please check GitHub Secrets.')
+              raise ValueError('KEYSTORE_BASE64 secret is EMPTY!')
           missing_padding = len(raw) % 4
           if missing_padding:
               raw += '=' * (4 - missing_padding)
           with open('app/release-key.jks', 'wb') as f:
               f.write(base64.b64decode(raw))
-          print('✅ Keystore decoded successfully! Size:', os.path.getsize('app/release-key.jks'), 'bytes')
           "
 
-      - name: Build Release APK & AAB
+      - name: Build Sideload APK Only (Ultra Fast)
         env:
           KEYSTORE_PASSWORD: ${{ secrets.KEYSTORE_PASSWORD }}
           KEY_ALIAS: ${{ secrets.KEY_ALIAS }}
@@ -51,17 +50,15 @@ jobs:
           echo "android.useAndroidX=true" >> gradle.properties
           echo "android.nonTransitiveRClass=true" >> gradle.properties
           touch app/proguard-rules.pro
-          gradle assembleRelease bundleRelease -Pandroid.useAndroidX=true
+          gradle assembleRelease -Pandroid.useAndroidX=true
           
-      - name: Upload APK & AAB to Temp Host
+      - name: Upload APK with Direct MIME Type (Fixes .zip bug)
         run: |
           APK_PATH="app/build/outputs/apk/release/app-release.apk"
-          AAB_PATH="app/build/outputs/bundle/release/app-release.aab"
           
-          APK_LINK=$(curl -sSf --upload-file "$APK_PATH" https://transfer.sh/app-release.apk || curl -sSf -F "file=@$APK_PATH" https://temp.sh/upload)
-          AAB_LINK=$(curl -sSf --upload-file "$AAB_PATH" https://transfer.sh/app-release.aab || curl -sSf -F "file=@$AAB_PATH" https://temp.sh/upload)
+          # Force Android package MIME type and explicit filename
+          APK_LINK=$(curl -sSf -H "Content-Type: application/vnd.android.package-archive" -H "X-Filename: NanoDraw.apk" --upload-file "$APK_PATH" "https://transfer.sh/NanoDraw.apk" || curl -sSf -F "file=@$APK_PATH;filename=NanoDraw.apk" https://temp.sh/upload)
           
-          echo "### 🚀 Build Complete!" >> $GITHUB_STEP_SUMMARY
-          echo "🔗 **Download APK:** [Click Here to Download]($APK_LINK)" >> $GITHUB_STEP_SUMMARY
-          echo "🔗 **Download AAB (Play Store):** [Click Here to Download]($AAB_LINK)" >> $GITHUB_STEP_SUMMARY
+          echo "### 🎨 NanoDraw Build Finished!" >> $GITHUB_STEP_SUMMARY
+          echo "📱 **Download APK:** [Direct Download Link]($APK_LINK)" >> $GITHUB_STEP_SUMMARY
           printf "\nDirect APK URL: %s\n" "$APK_LINK" >> $GITHUB_STEP_SUMMARY
