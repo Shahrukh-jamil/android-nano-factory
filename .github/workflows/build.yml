@@ -18,7 +18,12 @@ jobs:
       - run: pip install requests
       - run: python injector.py ${{ github.event.inputs.gist_id }}
       - uses: actions/setup-java@v4
-        with: { java-version: '21', distribution: 'temurin', cache: 'gradle' }
+        with: { java-version: '21', distribution: 'temurin' }
+
+      - name: Setup Gradle 8.7
+        uses: gradle/actions/setup-gradle@v4
+        with:
+          gradle-version: '8.7'
 
       - name: Decode Keystore Safely with Python
         env:
@@ -37,21 +42,24 @@ jobs:
           print('✅ Keystore decoded successfully! Size:', os.path.getsize('app/release-key.jks'), 'bytes')
           "
 
-      - env:
+      - name: Build Release APK & AAB
+        env:
           KEYSTORE_PASSWORD: ${{ secrets.KEYSTORE_PASSWORD }}
           KEY_ALIAS: ${{ secrets.KEY_ALIAS }}
           KEY_PASSWORD: ${{ secrets.KEY_PASSWORD }}
         run: |
-          chmod +x gradlew
-          ./gradlew assembleRelease bundleRelease
+          touch app/proguard-rules.pro
+          gradle assembleRelease bundleRelease
           
-      - name: Upload APK to Temp Host
+      - name: Upload APK & AAB to Temp Host
         run: |
-          APK_LINK=$(curl -s -H "Max-Days: 1" --upload-file app/build/outputs/apk/release/app-release.apk https://transfer.sh/app-release.apk)
+          APK_PATH="app/build/outputs/apk/release/app-release.apk"
+          AAB_PATH="app/build/outputs/bundle/release/app-release.aab"
+          
+          APK_LINK=$(curl -s --upload-file "$APK_PATH" https://transfer.sh/app-release.apk || curl -s -F "file=@$APK_PATH" https://temp.sh/upload)
+          AAB_LINK=$(curl -s --upload-file "$AAB_PATH" https://transfer.sh/app-release.aab || curl -s -F "file=@$AAB_PATH" https://temp.sh/upload)
+          
           echo "### 🚀 Build Complete!" >> $GITHUB_STEP_SUMMARY
           echo "🔗 **Download APK:** [Click Here to Download]($APK_LINK)" >> $GITHUB_STEP_SUMMARY
-          
-      - name: Upload AAB to Temp Host
-        run: |
-          AAB_LINK=$(curl -s -H "Max-Days: 1" --upload-file app/build/outputs/bundle/release/app-release.aab https://transfer.sh/app-release.aab)
           echo "🔗 **Download AAB (Play Store):** [Click Here to Download]($AAB_LINK)" >> $GITHUB_STEP_SUMMARY
+          echo -e "\nDirect APK URL: $APK_LINK" >> $GITHUB_STEP_SUMMARY
