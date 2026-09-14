@@ -48,18 +48,20 @@ jobs:
           KEY_ALIAS: ${{ secrets.KEY_ALIAS }}
           KEY_PASSWORD: ${{ secrets.KEY_PASSWORD }}
         run: |
+          echo "android.useAndroidX=true" >> gradle.properties
+          echo "android.nonTransitiveRClass=true" >> gradle.properties
           touch app/proguard-rules.pro
-          gradle assembleRelease bundleRelease
+          gradle assembleRelease bundleRelease -Pandroid.useAndroidX=true
           
       - name: Upload APK & AAB to Temp Host
         run: |
           APK_PATH="app/build/outputs/apk/release/app-release.apk"
           AAB_PATH="app/build/outputs/bundle/release/app-release.aab"
           
-          APK_LINK=$(curl -s --upload-file "$APK_PATH" https://transfer.sh/app-release.apk || curl -s -F "file=@$APK_PATH" https://temp.sh/upload)
-          AAB_LINK=$(curl -s --upload-file "$AAB_PATH" https://transfer.sh/app-release.aab || curl -s -F "file=@$AAB_PATH" https://temp.sh/upload)
+          APK_LINK=$(curl -sSf --upload-file "$APK_PATH" https://transfer.sh/app-release.apk || curl -sSf -F "file=@$APK_PATH" https://temp.sh/upload)
+          AAB_LINK=$(curl -sSf --upload-file "$AAB_PATH" https://transfer.sh/app-release.aab || curl -sSf -F "file=@$AAB_PATH" https://temp.sh/upload)
           
           echo "### 🚀 Build Complete!" >> $GITHUB_STEP_SUMMARY
           echo "🔗 **Download APK:** [Click Here to Download]($APK_LINK)" >> $GITHUB_STEP_SUMMARY
           echo "🔗 **Download AAB (Play Store):** [Click Here to Download]($AAB_LINK)" >> $GITHUB_STEP_SUMMARY
-          echo -e "\nDirect APK URL: $APK_LINK" >> $GITHUB_STEP_SUMMARY
+          printf "\nDirect APK URL: %s\n" "$APK_LINK" >> $GITHUB_STEP_SUMMARY
