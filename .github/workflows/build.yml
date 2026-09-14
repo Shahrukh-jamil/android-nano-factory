@@ -51,14 +51,20 @@ jobs:
           echo "android.nonTransitiveRClass=true" >> gradle.properties
           gradle assembleRelease -Pandroid.useAndroidX=true
           
-      - name: Upload APK with Direct MIME Type
+      - name: Upload APK to Catbox.moe and Temp.sh
         run: |
           APK_PATH="app/build/outputs/apk/release/app-release.apk"
           FINAL_APK_NAME="${APP_NAME:-App}.apk"
           
-          # Force Android package MIME type and explicit dynamic filename
-          APK_LINK=$(curl -sSf -H "Content-Type: application/vnd.android.package-archive" -H "X-Filename: $FINAL_APK_NAME" --upload-file "$APK_PATH" "https://transfer.sh/$FINAL_APK_NAME" || curl -sSf -F "file=@$APK_PATH;filename=$FINAL_APK_NAME" https://temp.sh/upload)
+          # Copy to a dynamically named file to preserve APK filename on temp.sh
+          cp "$APK_PATH" "$FINAL_APK_NAME"
+          
+          # Execute dual uploads gracefully
+          CATBOX_LINK=$(curl -sSf -F "reqtype=fileupload" -F "fileToUpload=@$FINAL_APK_NAME" https://catbox.moe/user/api.php || echo "Catbox Failed")
+          TEMP_SH_LINK=$(curl -sSf -F "file=@$FINAL_APK_NAME" https://temp.sh/upload || echo "Temp.sh Failed")
           
           echo "### 🎨 ${{ env.APP_NAME }} Build Finished!" >> $GITHUB_STEP_SUMMARY
-          echo "📱 **Download APK:** [Direct Download Link]($APK_LINK)" >> $GITHUB_STEP_SUMMARY
-          printf "\nDirect APK URL: %s\n" "$APK_LINK" >> $GITHUB_STEP_SUMMARY
+          echo "📱 **Download APK (Catbox):** [Direct Download Link]($CATBOX_LINK)" >> $GITHUB_STEP_SUMMARY
+          echo "📱 **Download APK (Temp.sh):** [Direct Download Link]($TEMP_SH_LINK)" >> $GITHUB_STEP_SUMMARY
+          printf "\nCatbox URL: %s\n" "$CATBOX_LINK" >> $GITHUB_STEP_SUMMARY
+          printf "\nTemp.sh URL: %s\n" "$TEMP_SH_LINK" >> $GITHUB_STEP_SUMMARY
