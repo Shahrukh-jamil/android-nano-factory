@@ -26,9 +26,8 @@ android {
 
     buildTypes {
         release {
-            isMinifyEnabled = true
-            isShrinkResources = true
-            proguardFiles(getDefaultProguardFile("proguard-android-optimize.txt"), "proguard-rules.pro")
+            isMinifyEnabled = false // Disabled for sub-40s compile speeds
+            isShrinkResources = false
             signingConfig = signingConfigs.getByName("release")
         }
     }
