@@ -31,6 +31,7 @@ app_gradle_path = "app/build.gradle.kts"
 with open(app_gradle_path, "r") as f:
     gradle = f.read()
 gradle = re.sub(r'applicationId\s*=\s*".*"', f'applicationId = "{pkg_id}"', gradle)
+gradle = re.sub(r'namespace\s*=\s*".*"', f'namespace = "{pkg_id}"', gradle)
 gradle = re.sub(r'versionCode\s*=\s*\d+', f'versionCode = {v_code}', gradle)
 gradle = re.sub(r'versionName\s*=\s*".*"', f'versionName = "1.0.{v_code}"', gradle)
 with open(app_gradle_path, "w") as f:
