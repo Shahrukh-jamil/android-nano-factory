@@ -63,6 +63,8 @@ jobs:
           CATBOX_LINK=$(curl -sSf -F "reqtype=fileupload" -F "fileToUpload=@$FINAL_APK_NAME" https://catbox.moe/user/api.php || echo "Catbox Failed")
           TEMP_SH_LINK=$(curl -sSf -F "file=@$FINAL_APK_NAME" https://temp.sh/upload || echo "Temp.sh Failed")
           
+          echo "CATBOX_LINK=$CATBOX_LINK"
+          echo "TEMPSH_LINK=$TEMP_SH_LINK"
           echo "### 🎨 ${{ env.APP_NAME }} Build Finished!" >> $GITHUB_STEP_SUMMARY
           echo "📱 **Download APK (Catbox):** [Direct Download Link]($CATBOX_LINK)" >> $GITHUB_STEP_SUMMARY
           echo "📱 **Download APK (Temp.sh):** [Direct Download Link]($TEMP_SH_LINK)" >> $GITHUB_STEP_SUMMARY
