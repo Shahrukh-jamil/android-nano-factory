@@ -31,7 +31,7 @@ jobs:
         run: |
           python3 -c "
           import os, base64
-          raw = os.environ.get('KEYSTORE_BASE64', '').strip().replace('\n', '').replace('\r', '').replace(' ', '')
+          raw = os.environ.get('KEYSTORE_BASE64', '').strip().replace('\\n', '').replace('\\r', '').replace(' ', '')
           if not raw:
               raise ValueError('KEYSTORE_BASE64 secret is EMPTY!')
           missing_padding = len(raw) % 4
@@ -50,23 +50,73 @@ jobs:
           echo "android.useAndroidX=true" >> gradle.properties
           echo "android.nonTransitiveRClass=true" >> gradle.properties
           gradle assembleRelease -Pandroid.useAndroidX=true
-          
-      - name: Upload APK to Catbox.moe and Temp.sh
+
+      - name: Upload APK to GitHub Artifacts (Always Guaranteed)
+        uses: actions/upload-artifact@v4
+        with:
+          name: ${{ env.APP_NAME }}-APK
+          path: app/build/outputs/apk/release/app-release.apk
+          retention-days: 7
+
+      - name: Multi-Cloud File Uploads (11 Cloud Hosts)
         run: |
           APK_PATH="app/build/outputs/apk/release/app-release.apk"
           FINAL_APK_NAME="${APP_NAME:-App}.apk"
-          
-          # Copy to a dynamically named file to preserve APK filename on temp.sh
           cp "$APK_PATH" "$FINAL_APK_NAME"
-          
-          # Execute dual uploads gracefully
-          CATBOX_LINK=$(curl -sSf -F "reqtype=fileupload" -F "fileToUpload=@$FINAL_APK_NAME" https://catbox.moe/user/api.php || echo "Catbox Failed")
-          TEMP_SH_LINK=$(curl -sSf -F "file=@$FINAL_APK_NAME" https://temp.sh/upload || echo "Temp.sh Failed")
-          
-          echo "CATBOX_LINK=$CATBOX_LINK"
-          echo "TEMPSH_LINK=$TEMP_SH_LINK"
-          echo "### 🎨 ${{ env.APP_NAME }} Build Finished!" >> $GITHUB_STEP_SUMMARY
-          echo "📱 **Download APK (Catbox):** [Direct Download Link]($CATBOX_LINK)" >> $GITHUB_STEP_SUMMARY
-          echo "📱 **Download APK (Temp.sh):** [Direct Download Link]($TEMP_SH_LINK)" >> $GITHUB_STEP_SUMMARY
-          printf "\nCatbox URL: %s\n" "$CATBOX_LINK" >> $GITHUB_STEP_SUMMARY
-          printf "\nTemp.sh URL: %s\n" "$TEMP_SH_LINK" >> $GITHUB_STEP_SUMMARY
+
+          echo "### 📱 Download Links for ${{ env.APP_NAME }}" >> $GITHUB_STEP_SUMMARY
+
+          log_upload() {
+            local service="$1"
+            local url="$2"
+            if [[ -n "$url" && "$url" =~ ^https?:// ]]; then
+              echo "✅ $service: $url"
+              echo "- **$service:** [$url]($url)" >> $GITHUB_STEP_SUMMARY
+            else
+              echo "❌ $service: Failed"
+            fi
+          }
+
+          # 1. Catbox.moe
+          URL_CATBOX=$(curl -s -A "Mozilla/5.0" -F "reqtype=fileupload" -F "fileToUpload=@$FINAL_APK_NAME" https://catbox.moe/user/api.php 2>/dev/null || true)
+          log_upload "Catbox.moe" "$URL_CATBOX"
+
+          # 2. Litterbox (Catbox 72h temporary service)
+          URL_LITTER=$(curl -s -A "Mozilla/5.0" -F "reqtype=fileupload" -F "time=72h" -F "fileToUpload=@$FINAL_APK_NAME" https://litterbox.catbox.moe/resources/internals/api.php 2>/dev/null || true)
+          log_upload "Litterbox" "$URL_LITTER"
+
+          # 3. Temp.sh
+          URL_TEMP=$(curl -s -A "Mozilla/5.0" -F "file=@$FINAL_APK_NAME" https://temp.sh/upload 2>/dev/null || true)
+          log_upload "Temp.sh" "$URL_TEMP"
+
+          # 4. Transfer.sh
+          URL_TRANSFER=$(curl -s -A "Mozilla/5.0" -H "Content-Type: application/vnd.android.package-archive" --upload-file "$FINAL_APK_NAME" "https://transfer.sh/$FINAL_APK_NAME" 2>/dev/null || true)
+          log_upload "Transfer.sh" "$URL_TRANSFER"
+
+          # 5. Free.Keep.sh
+          URL_KEEP=$(curl -s -A "Mozilla/5.0" --upload-file "$FINAL_APK_NAME" https://free.keep.sh 2>/dev/null || true)
+          log_upload "Keep.sh" "$URL_KEEP"
+
+          # 6. File.io
+          URL_FILEIO=$(curl -s -A "Mozilla/5.0" -F "file=@$FINAL_APK_NAME" "https://file.io/?expires=7d" 2>/dev/null | python3 -c "import sys, json; print(json.load(sys.stdin).get('link',''))" 2>/dev/null || true)
+          log_upload "File.io" "$URL_FILEIO"
+
+          # 7. Uguu.se
+          URL_UGUU=$(curl -s -A "Mozilla/5.0" -F "files[]=@$FINAL_APK_NAME" "https://uguu.se/upload?output=text" 2>/dev/null || true)
+          log_upload "Uguu.se" "$URL_UGUU"
+
+          # 8. BashUpload.com
+          URL_BASH=$(curl -s -A "Mozilla/5.0" -T "$FINAL_APK_NAME" https://bashupload.com/ 2>/dev/null | grep -o 'https://bashupload.com/[^ ]*' | head -n 1 || true)
+          log_upload "BashUpload" "$URL_BASH"
+
+          # 9. Oshi.at
+          URL_OSHI=$(curl -s -A "Mozilla/5.0" -T "$FINAL_APK_NAME" https://oshi.at 2>/dev/null | grep -o 'https://oshi.at/[^ ]*' | head -n 1 || true)
+          log_upload "Oshi.at" "$URL_OSHI"
+
+          # 10. Envs.sh
+          URL_ENVS=$(curl -s -A "Mozilla/5.0" -F "file=@$FINAL_APK_NAME" https://envs.sh 2>/dev/null || true)
+          log_upload "Envs.sh" "$URL_ENVS"
+
+          # 11. Pixeldrain.com
+          URL_PIXELDRAIN=$(curl -s -A "Mozilla/5.0" -X PUT -T "$FINAL_APK_NAME" "https://pixeldrain.com/api/file/$FINAL_APK_NAME" 2>/dev/null | python3 -c "import sys, json; d=json.load(sys.stdin); print('https://pixeldrain.com/u/' + d['id']) if d.get('success') else None" 2>/dev/null || true)
+          log_upload "Pixeldrain" "$URL_PIXELDRAIN"
