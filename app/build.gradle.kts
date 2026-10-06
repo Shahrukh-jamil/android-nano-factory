@@ -38,12 +38,26 @@ android {
     }
     kotlinOptions {
         jvmTarget = "17"
+        freeCompilerArgs = freeCompilerArgs + listOf(
+            "-Xskip-metadata-version-check",
+            "-Xskip-prerelease-check"
+        )
     }
-    
+
     packaging {
         resources {
             pickFirsts += "**/libLiteRt*.so"
+            pickFirsts += "**/liblitert*.so"
         }
+    }
+}
+
+configurations.all {
+    resolutionStrategy {
+        force("org.jetbrains.kotlin:kotlin-stdlib:2.0.21")
+        force("org.jetbrains.kotlin:kotlin-stdlib-jdk7:2.0.21")
+        force("org.jetbrains.kotlin:kotlin-stdlib-jdk8:2.0.21")
+        force("org.jetbrains.kotlin:kotlin-reflect:2.0.21")
     }
 }
 
@@ -52,5 +66,5 @@ dependencies {
     implementation("androidx.appcompat:appcompat:1.7.0")
     implementation("org.jetbrains.kotlinx:kotlinx-coroutines-android:1.8.1")
     implementation("com.google.ai.edge.litert:litert:2.2.0")
-    implementation("com.google.ai.edge.litertlm:litertlm-android:latest.release")
+    implementation("com.google.ai.edge.litertlm:litertlm-android:0.18.0")
 }
