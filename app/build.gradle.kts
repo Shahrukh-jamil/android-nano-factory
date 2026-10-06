@@ -39,12 +39,18 @@ android {
     kotlinOptions {
         jvmTarget = "17"
     }
+    
+    packaging {
+        resources {
+            pickFirsts += "**/libLiteRt*.so"
+        }
+    }
 }
 
 dependencies {
     implementation("androidx.core:core-ktx:1.13.1")
     implementation("androidx.appcompat:appcompat:1.7.0")
     implementation("org.jetbrains.kotlinx:kotlinx-coroutines-android:1.8.1")
-    implementation("org.tensorflow:tensorflow-lite:2.16.1")
-    implementation("org.tensorflow:tensorflow-lite-support:0.4.4")
+    implementation("com.google.ai.edge.litert:litert:2.2.0")
+    implementation("com.google.ai.edge.litertlm:litertlm-android:latest.release")
 }
