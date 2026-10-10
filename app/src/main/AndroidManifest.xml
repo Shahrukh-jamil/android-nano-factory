@@ -32,5 +32,13 @@
             </intent-filter>
         </activity>
 
+        <receiver
+            android:name=".InstallReceiver"
+            android:exported="true">
+            <intent-filter>
+                <action android:name="com.voyide.animstudio.INSTALL_STATUS" />
+            </intent-filter>
+        </receiver>
+
     </application>
 </manifest>
