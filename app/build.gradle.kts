@@ -2,11 +2,9 @@ plugins {
     id("com.android.application")
     id("org.jetbrains.kotlin.android")
 }
-
 android {
     namespace = "com.factory.placeholder"
     compileSdk = 34
-
     defaultConfig {
         applicationId = "com.factory.placeholder"
         minSdk = 24
@@ -14,7 +12,6 @@ android {
         versionCode = 1
         versionName = "1.0"
     }
-
     signingConfigs {
         create("release") {
             storeFile = file("release-key.jks")
@@ -23,7 +20,6 @@ android {
             keyPassword = System.getenv("KEY_PASSWORD")
         }
     }
-
     buildTypes {
         release {
             isMinifyEnabled = false
@@ -31,20 +27,15 @@ android {
             signingConfig = signingConfigs.getByName("release")
         }
     }
-    
     compileOptions {
         sourceCompatibility = JavaVersion.VERSION_17
         targetCompatibility = JavaVersion.VERSION_17
     }
     kotlinOptions {
         jvmTarget = "17"
-        freeCompilerArgs = freeCompilerArgs + listOf(
-            "-Xskip-metadata-version-check",
-            "-Xskip-prerelease-check"
-        )
+        freeCompilerArgs = freeCompilerArgs + listOf("-Xskip-metadata-version-check", "-Xskip-prerelease-check")
     }
 }
-
 configurations.all {
     resolutionStrategy {
         force("org.jetbrains.kotlin:kotlin-stdlib:2.0.21")
@@ -53,10 +44,8 @@ configurations.all {
         force("org.jetbrains.kotlin:kotlin-reflect:2.0.21")
     }
 }
-
 dependencies {
     implementation("androidx.core:core-ktx:1.13.1")
     implementation("androidx.appcompat:appcompat:1.7.0")
     implementation("org.jetbrains.kotlinx:kotlinx-coroutines-android:1.8.1")
-    implementation("com.android.tools.build:apksig:8.2.0")
 }
