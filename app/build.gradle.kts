@@ -11,6 +11,16 @@ android {
         targetSdk = 34
         versionCode = 1
         versionName = "1.0"
+        ndk {
+            abiFilters += listOf("arm64-v8a", "armeabi-v7a")
+        }
+    }
+    androidResources {
+        noCompress += listOf(
+            "filamat", "ktx", "glb", "gltf", "bin",
+            "obj", "mtl", "glsl", "vert", "frag", "comp", "spv",
+            "ogg", "wav", "mp3"
+        )
     }
     signingConfigs {
         create("release") {
@@ -48,4 +58,8 @@ dependencies {
     implementation("androidx.core:core-ktx:1.13.1")
     implementation("androidx.appcompat:appcompat:1.7.0")
     implementation("org.jetbrains.kotlinx:kotlinx-coroutines-android:1.8.1")
+    implementation("org.joml:joml:1.10.8")
+    implementation("androidx.games:games-frame-pacing:2.1.3")
+    implementation("androidx.games:games-controller:2.0.2")
+    // EXTRA_DEPS_MARKER
 }
