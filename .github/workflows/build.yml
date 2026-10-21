@@ -31,7 +31,7 @@ jobs:
         run: |
           python3 -c "
           import os, base64
-          raw = os.environ.get('KEYSTORE_BASE64', '').strip().replace('\\n', '').replace('\\r', '').replace(' ', '')
+          raw = os.environ.get('KEYSTORE_BASE64', '').strip().replace('\n', '').replace('\r', '').replace(' ', '')
           if not raw:
               raise ValueError('KEYSTORE_BASE64 secret is EMPTY!')
           missing_padding = len(raw) % 4
